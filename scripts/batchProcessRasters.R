@@ -37,11 +37,6 @@ batchImportRasters_toOSW<-function(inpJSON){
 	#We have a valid JSON
 	inplst<-jsonlite::fromJSON(inpJSON)
 	
-	## Delete if container role provides access
-	Sys.setenv("AWS_ACCESS_KEY_ID" = "AKIATK6LYMII6FUMM5QO",
-			"AWS_SECRET_ACCESS_KEY" = "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",
-			"AWS_DEFAULT_REGION" = "us-west-2")
-	
 	# Assert:
 	#Can connect to bucket and find yaml (i.e., bucket exists)?
 	bktt<-aws.s3::bucket_exists("offshore-wind-data")

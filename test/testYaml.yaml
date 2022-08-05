@@ -1,9 +1,10 @@
 ATkeypair: keyrGM8esxsQNc5aP:appO3EgtQh3UREeun
 ATtable: MarineMammalsTurtles
-sciName: Chelonia midas
-inputRaster: inputrasters/demoraster.grd
-baseGridPathName: data/aliquoteGrid.grd
+sciName: Chelonia mydas
+inputRaster: FirstProcess/InputRasters/demoraster.tif
+baseGridPathName: FirstProcess/AliquoteGrid/aliqgrid.grd
 seasons: Summer
-saveDir: processedrasters/
-logDir: logs/
+saveDir: FirstProcess/ProcessedRasters/
+logDir: FirstProcess/logs/
 logSessionInfo: FALSE
+localTempDir: c:/temp/

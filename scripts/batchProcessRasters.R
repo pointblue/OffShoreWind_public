@@ -1,9 +1,19 @@
-# TODO: 
-# 
 # Author: lsalas
 ###############################################################################
 
-
+## Output reporting function
+# result is a string, either "Error" or "Success"
+# process is a string naming the process evaluated
+# description is either a string or a data.frame or itself a json string
+makeOutReport<-function(result, process="Some process", description="some description"){
+	if(class(description)=="data.frame"){
+		desc<-jsonlite::toJSON(description)
+	}else{
+		desc<-decription
+	}
+	tdf<-data.frame(Result=result,Process=process,Description=desc)
+	return(toJSON(tdf))
+}
 ## This is the function that processes the yaml and reprojects and crops some rasters
 ## inpJSON is the JSON string passed by Lambda to the function, and must conform to the example here: https://pointblue.atlassian.net/wiki/spaces/RW/pages/1505525765/Processing+S3+trigger+event+using+R
 ## The yaml file must be like the example here:
@@ -22,19 +32,16 @@ batchImportRasters_toOSW<-function(inpJSON){
 	## Are we missing a needed library?
 	if(FALSE %in% w){
 		wdf<-data.frame(Lib=names(w),LoadStatus=as.character(w));row.names(wdf)<-NULL
-		jwdf<-jsonlite::toJSON(subset(wdf,LoadStatus=="FALSE"))
-		retJSON<-paste0("{\"Out\":[{\"Result\":\"Error\",\"Process\":\"Loading libraries\",\"value\":\"Missing libraries\"}], \"Description\":\"",jwdf,"\"}")
-		return(retJSON)
+		wdf<-subset(wdf,LoadStatus=="FALSE")
+		return(makeOutReport(result="Error",process="Check libraries",description=wdf))
 	}
 		
 	## Is the input a valid JSON string?
 	if(!is.character(inpJSON)){
-		retJSON<-"{\"Out\":[{\"Result\":\"Error\",\"Process\":\"Reading JSON\",\"value\":\"Failed to load JSON\"}], \"Description\":\"Input is not a character string\"}"
-		return(retJSON)
+		return(makeOutReport(result="Error",process="Check input JSON",description="Input is not a character string"))
 	}
 	if(!jsonlite::validate(inpJSON)[[1]]){
-		retJSON<-"{\"Out\":[{\"Result\":\"Error\",\"Process\":\"Reading JSON\",\"value\":\"Failed to load JSON\"}], \"Description\":\"Invalid JSON\"}"
-		return(retJSON)
+		return(makeOutReport(result="Error",process="Check input JSON",description="Invalid JSON"))
 	}
 	
 	#We have a valid JSON
@@ -45,24 +52,21 @@ batchImportRasters_toOSW<-function(inpJSON){
 	inpBuck<-"offshore-wind-data"
 	bktt<-aws.s3::bucket_exists(inpBuck)
 	if(!bktt[1]){
-		retJSON<-"{\"Out\":[{\"Result\":\"Error\",\"Process\":\"Bucket access\",\"value\":\"Failed to access the bucket\"}], \"Description\":\"Failed to validate existence of bucket offshore-wind-data\"}"
-		return(retJSON)
+		return(makeOutReport(result="Error",process="Bucket access",description="Can't access the bucket"))
 	}
 	
 	# The yaml exists, because it triggered the event. Can we read it? Is the yaml valid?
 	inpYAML<-inplst$Records$s3$object$key[[1]][1]  #This should be the full path to the yaml, right???
 	if(nchar(inpYAML)<20){
-		retJSON<-"{\"Out\":[{\"Result\":\"Error\",\"Process\":\"Read JSON key\",\"value\":\"Invalid path to yaml file\"}], \"Description\":\"The key must contain a valid name and full path to the yaml file in the bucket\"}"
-		return(retJSON)
+		return(makeOutReport(result="Error",process="JSON key",description="Invalid path to yaml file"))
 	}
 	
 	#  Can we load it? Is the input a valid yaml document?
 	chryaml<-rawToChar(get_object(bucket="offshore-wind-data",object=inpYAML))
 	ymlc<-try(yaml::yaml.load(chryaml),silent=TRUE)
 	if(inherits(ymlc,"try-error")){
-		errmsg<-toJSON(ymlc)
-		retJSON<-paste0("{\"Out\":[{\"Result\":\"Error\",\"Process\":\"Read yaml\",\"value\":\"Failed to read\"}], \"Description\":\"",errmsg,"\"}")
-		return(retJSON)
+		errmsg<-jsonlite::toJSON(ymlc)
+		return(makeOutReport(result="Error",process="Read yaml",description=errmsg))
 	}
 	
 	# Validate yaml contents - must have:
@@ -77,7 +81,10 @@ batchImportRasters_toOSW<-function(inpJSON){
 	# season (default all)
 	chkSeasons<-toupper(ymlc$seasons) %in% c("",NULL,NA,"ALL","SUMMER","FALL","WINTER","SPRING")
 	allseasons<-c("Summer","Fall","Winter","Spring")
-	seasons<-ifelse(ymlc$seasons=="",allseasons,ifelse(is.na(ymlc$seasons),allseasons,ifelse(is.null(ymlc$seasons),allseasons,ifelse(toupper(ymlc$seasons)=="ALL",allseasons,ymlc$seasons))))
+	seasons<-ifelse(ymlc$seasons=="",allseasons,
+			ifelse(is.na(ymlc$seasons),allseasons,
+					ifelse(is.null(ymlc$seasons),allseasons,
+							ifelse(toupper(ymlc$seasons)=="ALL",allseasons,ymlc$seasons))))
 		
 	### READ in bucket using aws.s3 command
 	# raster path and name inside the bucket
@@ -97,10 +104,9 @@ batchImportRasters_toOSW<-function(inpJSON){
 	
 	## Did the YAML document provide all the needed inputs?
 	if(nchar(atKP)!=35 | !chkTable | !chkSpp | !chkRast | !chkGrid | !chkSeasons | !chkSavePath | !chkLogDir){
-		retJSON<-paste("{\"Out\":[{\"Result\":\"Error\",\"Process\":\"Validate yaml\",\"value\":\"Missing or wrong mandatory inputs\"}],", 
-				"\"Description\":\"One or more of the following are wrong or missing in the input yaml: AirTable key pair, target table or species,",
-				"input raster or base grid filepath, a valid season, output directory path, log directory path. \"}")
-		return(retJSON)
+		errmsg<-paste("One or more of the following are wrong or missing in the input yaml: AirTable key pair, target table or species,",
+				"input raster or base grid filepath, a valid season, output directory path, log directory path.")
+		return(makeOutReport(result="Error",process="Validate yaml",description=errmsg))
 	}
 	
 	## functions we will need
@@ -153,8 +159,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 	localTempDir<-ymlc$localTempDir
 	ltdchk<-dir.exists(localTempDir)
 	if(!ltdchk){
-		retJSON<-"{\"Out\":[{\"Result\":\"Error\",\"Process\":\"Access local temp directory\",\"value\":\"Invalid path to local temp directory\"}], \"Description\":\"A valid and accessible local temp directory must be provided\"}"
-		return(retJSON)
+		return(makeOutReport(result="Error",process="Check local temp directory",description="Invalid path to local temp directory"))
 	}
 	
 	#create log file for this run:
@@ -166,7 +171,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 	zz <- try(file(logfile, "w"),silent=T)
 	flog<-0
 	if(inherits(zz,"try-error")){
-		retJSON<-"{\"Out\":[{\"Result\":\"Error\",\"Process\":\"Open local log file\",\"value\":\"Failed to create log file in local temp directory\"}], \"Description\":\"Could not open log file in local directory. Logs will not be kept.\"}"
+		cat(makeOutReport(result="Error",process="Create log file",description="Failed to create log file in local temp directory. No log of this run."))
 		flog<-1
 	}
 	if(flog==0){
@@ -181,9 +186,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 	# copy raster data locally from bucket
 	wgrd<-try(save_object(object="FirstProcess/AliquoteGrid/aliqgrid.grd",bucket="offshore-wind-data",file=paste0(localTempDir,"aliqgrid.grd")),silent=T)
 	wgri<-try(save_object(object="FirstProcess/AliquoteGrid/aliqgrid.gri",bucket="offshore-wind-data",file=paste0(localTempDir,"aliqgrid.gri")),silent=T)
-	if(inherits(wgrd,"try-error") | inherits(wgri,"try-error"))
-	if(!inherits(wgrd,"try-error") & !inherits(wgri,"try-error")){
-		retJSON<-"{\"Out\":[{\"Result\":\"Error\",\"Process\":\"Copy base grid into temp directory\",\"value\":\"Failed\"}], \"Description\":\"Failed to copy base grid into the local temp directory\"}"
+	if(inherits(wgrd,"try-error") | inherits(wgri,"try-error")){
 		if(flog==0){
 			cat("Failed to copy base grid locally.",sep ="\n",file = zz, append=TRUE)
 			if(logSessionInfo){
@@ -194,12 +197,11 @@ batchImportRasters_toOSW<-function(inpJSON){
 			close(zz)
 			svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-data"),silent=TRUE)
 		}
-		return(retJSON)
+		return(makeOutReport(result="Error",process="Copy base grid",description="Failed to copy base grid into the local temp directory"))
 	}
 	fegrd<-file.exists(paste0(localTempDir,"aliqgrid.grd"))
 	fegri<-file.exists(paste0(localTempDir,"aliqgrid.grd"))
 	if(!fegrd | !fegri){
-		retJSON<-"{\"Out\":[{\"Result\":\"Error\",\"Process\":\"Copy base grid into temp directory\",\"value\":\"Failed\"}], \"Description\":\"Failed to copy base grid into the local temp directory\"}"
 		if(flog==0){
 			cat("Failed to copy base grid locally.",sep ="\n",file = zz, append=TRUE)
 			if(logSessionInfo){
@@ -210,12 +212,11 @@ batchImportRasters_toOSW<-function(inpJSON){
 			close(zz)
 			svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-data"),silent=TRUE)
 		}
-		return(retJSON)
+		return(makeOutReport(result="Error",process="Copy base grid",description="Failed to copy base grid into the local temp directory"))
 	}
 
 	aliqgrd<-try(raster(paste0(localTempDir,"aliqgrid.gri")),silent=T)
 	if(inherits(aliqgrd,"try-error")){
-		retJSON<-"{\"Out\":[{\"Result\":\"Error\",\"Process\":\"Load raster\",\"value\":\"Error loading raster\"}], \"Description\":\"The raster was copied locally and is accessible, but failed to load. Corrupt raster file?\"}"
 		if(flog==0){
 			cat("Failed to load the base grid into a raster.",sep ="\n",file = zz, append=TRUE)
 			if(logSessionInfo){
@@ -226,7 +227,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 			close(zz)
 			svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-data"),silent=TRUE)
 		}
-		return(retJSON)
+		return(makeOutReport(result="Error",process="Load base grid",description="Base grid exists and is acessible, but failed to load."))
 	}
 	projAliq<-projection(aliqgrd)
 	tgEx<-as.matrix(extent(aliqgrd))
@@ -242,8 +243,6 @@ batchImportRasters_toOSW<-function(inpJSON){
 	Sys.setenv(AIRTABLE_API_KEY=strsplit(atKP,":")[[1]][1])
 	tablesToProcess<-try(getTablesToProcess(atSourceTable=atTable,seasons=seasons),silent=TRUE) 
 	if(inherits(tablesToProcess,"try-error") | nrow(tablesToProcess)==0){
-		errmsg<-toJSON(tablesToProcess)
-		retJSON<-paste0("{\"Out\":[{\"Result\":\"Error\",\"Process\":\"List tables to process\",\"value\":\"Failed to create list\"}], \"Description\":\"",errmsg,"\"}")
 		if(flog==0){
 			cat("Failed to generate list of tables to process.",sep ="\n",file = zz, append=TRUE)
 			if(logSessionInfo){
@@ -254,14 +253,14 @@ batchImportRasters_toOSW<-function(inpJSON){
 			close(zz)
 			svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-data"),silent=TRUE)
 		}
-		return(retJSON)
+		errmsg<-toJSON(tablesToProcess)
+		return(makeOutReport(result="Error",process="List tables to process",description=errmsg))
 	}
 	
 	#subst by the species of interest
 	tablesToProcess<-subset(tablesToProcess,ScientificName==sciName)
 	#check that we have something to process!!!
 	if(nrow(tablesToProcess)==0){
-		retJSON<-"{\"Out\":[{\"Result\":\"Error\",\"Process\":\"List tables to process\",\"value\":\"List is of length 0\"}], \"Description\":\"Nothing to process.\"}"
 		if(flog==0){
 			cat("List of tables to process is of length 0 - nothing to process.",sep ="\n",file = zz, append=TRUE)
 			if(logSessionInfo){
@@ -272,7 +271,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 			close(zz)
 			svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-data"),silent=TRUE)
 		}
-		return(retJSON)
+		return(makeOutReport(result="Error",process="List tables to process",description="List is of length 0, nothing to process."))
 	}
 	
 	## READY TO PROCESS
@@ -321,8 +320,6 @@ batchImportRasters_toOSW<-function(inpJSON){
 				localfile<-paste0(localTempDir,layerNm,".RData")
 				svl<-try(save(spptable,file=localfile),silent=TRUE)
 				if(inherits(svl,"try-error")){
-					errmsg<-toJSON(svl)
-					retJSON<-paste0("{\"Out\":[{\"Result\":\"Error\",\"Process\":\"Save object locally\",\"value\":\"Failed to save data table locally\"}], \"Description\":\"",errmsg,"\"}")
 					if(flog==0){
 						cat("Processed raster but failed to save data table locally.",sep ="\n",file = zz, append=TRUE)
 						if(logSessionInfo){
@@ -333,13 +330,12 @@ batchImportRasters_toOSW<-function(inpJSON){
 						close(zz)
 						svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-data"),silent=TRUE)
 					}
-					return(retJSON)
+					errmsg<-toJSON(svl)
+					return(makeOutReport(result="Error",process="Save object locally",description=errmsg))
 				}
 				saveobject<-paste0(savePath,layerNm,".RData") 
 				svb<-try(put_object(file=localfile,object=saveobject,bucket="offshore-wind-data"),silent=TRUE)
 				if(inherits(svb,"try-error")){
-					errmsg<-toJSON(svb)
-					retJSON<-paste0("{\"Out\":[{\"Result\":\"Error\",\"Process\":\"Save object in bucket\",\"value\":\"Failed to save data table in the bucket\"}], \"Description\":\"",errmsg,"\"}")
 					if(flog==0){
 						cat("Processed raster but failed to save data table in the bucket.",sep ="\n",file = zz, append=TRUE)
 						if(logSessionInfo){
@@ -350,7 +346,8 @@ batchImportRasters_toOSW<-function(inpJSON){
 						close(zz)
 						svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-data"),silent=TRUE)
 					}
-					return(retJSON)
+					errmsg<-toJSON(svb)
+					return(makeOutReport(result="Error",process="Save object in bucket",description=errmsg))
 				}
 				
 				## Tabulate date of creation
@@ -403,8 +400,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 		}
 		updateResults<-rbind(updateResults,tdf)
 	}
-	retJSON<-toJSON(updateResults)	
-	#retJSON<-paste0("{\"Out\":[{\"Result\":\"Success\",\"Process\":\"Everything but processing\",\"value\":\"Checks passed\"}], \"Description\":\"All good\"}")
+	updatedRes<-toJSON(updateResults)	
 	
 	if(flog==0){
 		cat("Completed processing rasters.",sep ="\n",file = zz, append=TRUE)
@@ -416,7 +412,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 		close(zz)
 		svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-data"),silent=TRUE)
 	}
-	return(retJSON)
+	return(makeOutReport(result="Completed",process="Cropping and saving",description=updatedRes))
 	
 }
 

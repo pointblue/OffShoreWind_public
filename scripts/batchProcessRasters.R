@@ -94,7 +94,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 	
 	# Assert:
 	#Can connect to bucket and find yaml (i.e., bucket exists)?
-	inpBuck<-"offshore-wind-data"
+	inpBuck<-"offshore-wind-test"
 	bktt<-aws.s3::bucket_exists(inpBuck)
 	if(!bktt[1]){
 		return(makeOutReport(result="Error",process="Bucket access",description="Can't access the bucket"))

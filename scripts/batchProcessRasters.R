@@ -1,6 +1,7 @@
 # Author: lsalas
 ###############################################################################
 
+
 ## Output reporting function
 # result is a string, either "Error" or "Success"
 # process is a string naming the process evaluated
@@ -14,6 +15,50 @@ makeOutReport<-function(result, process="Some process", description="some descri
 	tdf<-data.frame(Result=result,Process=process,Description=desc)
 	return(toJSON(tdf))
 }
+
+
+## This is the Airtable data query function
+# base is "NeededDistData"
+# tblnam is the table name, one of: "Seabirds","MarineMammalsTurtles", "Fish", "Benthic", "HumanUses"
+getATtable<-function(base="NeededDistData",tblnam,includeID=FALSE){
+	baseID<-"appO3EgtQh3UREeun"
+	rcweights<-airtable(base = baseID, table = tblnam)
+	rcw<-rcweights[[tblnam]]$select_all()
+	if(!includeID){
+		rcw<-rcw[,which(!names(rcw) %in% c("id","createdTime"))]
+	}else{
+		rcw<-rcw[,which(!names(rcw) %in% c("createdTime"))]
+	}
+	
+	return(rcw)
+}	
+
+## tablesToProcess returns a data.frame naming all the species, dataset path, layer name and season for each table to process
+## It retrieves this information from AirTable - for only one species and one or all seasons
+# atSourceTable is the atTable parameter in the yaml
+getTablesToProcess<-function(atSourceTable,seasons){
+	sourcesTable<-getATtable(base="NeededDistData",tblnam=atSourceTable,includeID=TRUE) #catch
+	
+	tablesList<-list()
+	if("Summer" %in% seasons){tablesList[["Summer"]]<-sourcesTable[,c("id","ScientificName","SummerPathToDataset","SummerLayerName")]}
+	if("Fall" %in% seasons){tablesList[["Fall"]]<-sourcesTable[,c("id","ScientificName","FallPathToDataset","FallLayerName")]}
+	if("Winter" %in% seasons){tablesList[["Winter"]]<-sourcesTable[,c("id","ScientificName","WinterPathToDataset","WinterLayerName")]}
+	if("Spring" %in% seasons){tablesList[["Spring"]]<-sourcesTable[,c("id","ScientificName","SpringPathToDataset","SpringLayerName")]}
+	
+	for(tt in names(tablesList)){
+		sourcesTable<-tablesList[[tt]]
+		names(sourcesTable)<-c("recId","ScientificName","datasetName","layerName")
+		sourcesTable<-subset(sourcesTable,!is.na(datasetName))
+		sourcesTable$Season<-tt
+		tablesList[[tt]]<-sourcesTable
+	}
+	
+	tablesToProcess<-rbindlist(tablesList) #catch
+	tablesToProcess<-unique(tablesToProcess)
+	
+	return(tablesToProcess)
+}
+
 ## This is the function that processes the yaml and reprojects and crops some rasters
 ## inpJSON is the JSON string passed by Lambda to the function, and must conform to the example here: https://pointblue.atlassian.net/wiki/spaces/RW/pages/1505525765/Processing+S3+trigger+event+using+R
 ## The yaml file must be like the example here:
@@ -109,57 +154,12 @@ batchImportRasters_toOSW<-function(inpJSON){
 		return(makeOutReport(result="Error",process="Validate yaml",description=errmsg))
 	}
 	
-	## functions we will need
-	##################################
-	## This is the Airtable data query function
-	# base is "NeededDistData"
-	# tblnam is the table name, one of: "Seabirds","MarineMammalsTurtles", "Fish", "Benthic", "HumanUses"
-	getATtable<-function(base="NeededDistData",tblnam,includeID=FALSE){
-		baseID<-"appO3EgtQh3UREeun"
-		rcweights<-airtable(base = baseID, table = tblnam)
-		rcw<-rcweights[[tblnam]]$select_all()
-		if(!includeID){
-			rcw<-rcw[,which(!names(rcw) %in% c("id","createdTime"))]
-		}else{
-			rcw<-rcw[,which(!names(rcw) %in% c("createdTime"))]
-		}
-		
-		return(rcw)
-	}	
-	
-	## tablesToProcess returns a data.frame naming all the species, dataset path, layer name and season for each table to process
-	## It retrieves this information from AirTable - for only one species and one or all seasons
-	# atSourceTable is the atTable parameter in the yaml
-	getTablesToProcess<-function(atSourceTable,seasons){
-		sourcesTable<-getATtable(base="NeededDistData",tblnam=atSourceTable,includeID=TRUE) #catch
-		
-		tablesList<-list()
-		if("Summer" %in% seasons){tablesList[["Summer"]]<-sourcesTable[,c("id","ScientificName","SummerPathToDataset","SummerLayerName")]}
-		if("Fall" %in% seasons){tablesList[["Fall"]]<-sourcesTable[,c("id","ScientificName","FallPathToDataset","FallLayerName")]}
-		if("Winter" %in% seasons){tablesList[["Winter"]]<-sourcesTable[,c("id","ScientificName","WinterPathToDataset","WinterLayerName")]}
-		if("Spring" %in% seasons){tablesList[["Spring"]]<-sourcesTable[,c("id","ScientificName","SpringPathToDataset","SpringLayerName")]}
-		
-		for(tt in names(tablesList)){
-			sourcesTable<-tablesList[[tt]]
-			names(sourcesTable)<-c("recId","ScientificName","datasetName","layerName")
-			sourcesTable<-subset(sourcesTable,!is.na(datasetName))
-			sourcesTable$Season<-tt
-			tablesList[[tt]]<-sourcesTable
-		}
-		
-		tablesToProcess<-rbindlist(tablesList) #catch
-		tablesToProcess<-unique(tablesToProcess)
-		
-		return(tablesToProcess)
-	}
-	##########################################
-	
 	## Load the grid - this is the reference grid to rasterize to - path in YAML
 	# Check the local temp directory:
-	localTempDir<-ymlc$localTempDir
+	localTempDir<-tempdir()
 	ltdchk<-dir.exists(localTempDir)
 	if(!ltdchk){
-		return(makeOutReport(result="Error",process="Check local temp directory",description="Invalid path to local temp directory"))
+		return(makeOutReport(result="Error",process="Check local temp directory",description="Can't find local temp directory"))
 	}
 	
 	#create log file for this run:

@@ -7,4 +7,3 @@ seasons: Summer
 saveDir: FirstProcess/ProcessedRasters/
 logDir: FirstProcess/logs/
 logSessionInfo: FALSE
-localTempDir: c:/temp/

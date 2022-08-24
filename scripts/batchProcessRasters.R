@@ -116,7 +116,8 @@ batchImportRasters_toOSW<-function(inpJSON){
 	
 	# Validate yaml contents - must have:
 	# AT key and db key
-	atKP<-ymlc$ATkeypair
+	atKF<-ymlc$ATkeyfile
+	chkKF<-suppressMessages(object_exists(bucket=inpBuck,object=paste0("FirstProcess/keys/",atKF)))
 	# Target AT table
 	atTable<-ymlc$ATtable
 	chkTable<-atTable %in% c("Seabirds","MarineMammalsTurtles","Fish","Benthic","HumanUses")
@@ -148,8 +149,8 @@ batchImportRasters_toOSW<-function(inpJSON){
 	logSessionInfo<-ifelse(toupper(ymlc$logSessionInfo)=="Y",TRUE,FALSE)
 	
 	## Did the YAML document provide all the needed inputs?
-	if(nchar(atKP)!=35 | !chkTable | !chkSpp | !chkRast | !chkGrid | !chkSeasons | !chkSavePath | !chkLogDir){
-		errmsg<-paste("One or more of the following are wrong or missing in the input yaml: AirTable key pair, target table or species,",
+	if(!chkKF | !chkTable | !chkSpp | !chkRast | !chkGrid | !chkSeasons | !chkSavePath | !chkLogDir){
+		errmsg<-paste("One or more of the following are wrong or missing in the input yaml: AirTable key file name, target table or species,",
 				"input raster or base grid filepath, a valid season, output directory path, log directory path.")
 		return(makeOutReport(result="Error",process="Validate yaml",description=errmsg))
 	}
@@ -240,7 +241,14 @@ batchImportRasters_toOSW<-function(inpJSON){
 	## How do we know that the input data are indeed related to these tables? We trust the user.
 	#generate the list of tables to be processed
 	# First need to set the env key:
-	Sys.setenv(AIRTABLE_API_KEY=strsplit(atKP,":")[[1]][1])
+	atKobj<-rawToChar(get_object(bucket=inpBuck,object=paste0("FirstProcess/keys/",atKF)))
+	ymlatk<-try(yaml::yaml.load(atKobj),silent=TRUE)
+	if(inherits(ymlatk,"try-error")){
+		errmsg<-jsonlite::toJSON(ymlatk)
+		return(makeOutReport(result="Error",process="Read AT keys from yaml file",description=errmsg))
+	}
+	
+	Sys.setenv(AIRTABLE_API_KEY=ymlatk$Key)
 	tablesToProcess<-try(getTablesToProcess(atSourceTable=atTable,seasons=seasons),silent=TRUE) 
 	if(inherits(tablesToProcess,"try-error") | nrow(tablesToProcess)==0){
 		if(flog==0){
@@ -365,7 +373,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 				}
 				
 				#Update the AT to append the date
-				appendtry<-try(air_update(base="appO3EgtQh3UREeun",table_name=atTable,
+				appendtry<-try(air_update(base=ymlatk$Base,table_name=atTable,
 								record_id=recId,record_data=newdata),silent=TRUE)
 				if(inherits(appendtry,"try-error")){
 					tdf<-data.frame(Base=datasetNm,Layer=layerNm,Season=season,

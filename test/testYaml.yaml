@@ -1,4 +1,4 @@
-ATkeypair: keyrGM8esxsQNc5aP:appO3EgtQh3UREeun
+ATkeyfile: ATkeys_OSW.yaml
 ATtable: MarineMammalsTurtles
 sciName: Chelonia mydas
 inputRaster: FirstProcess/InputRasters/demoraster.tif
@@ -7,4 +7,3 @@ seasons: Summer
 saveDir: FirstProcess/ProcessedRasters/
 logDir: FirstProcess/logs/
 logSessionInfo: FALSE
-localTempDir: c:/temp/

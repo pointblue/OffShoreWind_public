@@ -12,8 +12,7 @@ makeOutReport<-function(result, process="Some process", description="some descri
 	}else{
 		desc<-decription
 	}
-	tdf<-data.frame(Result=result,Process=process,Description=desc)
-	return(toJSON(tdf))
+	return(paste(process, desc, sep=": "))
 }
 
 

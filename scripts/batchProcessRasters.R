@@ -10,10 +10,10 @@ makeOutReport<-function(result, process="Some process", description="some descri
 	if(class(description)=="data.frame"){
 		desc<-jsonlite::toJSON(description)
 	}else{
-		desc<-decription
+		desc<-description
 	}
-	tdf<-data.frame(Result=result,Process=process,Description=desc)
-	return(toJSON(tdf))
+	tdf<-data.frame(Result=result,Process=process,Description=as.character(desc))
+	return(jsonlite::toJSON(tdf))
 }
 
 
@@ -110,7 +110,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 	chryaml<-rawToChar(get_object(bucket="offshore-wind-data",object=inpYAML))
 	ymlc<-try(yaml::yaml.load(chryaml),silent=TRUE)
 	if(inherits(ymlc,"try-error")){
-		errmsg<-jsonlite::toJSON(ymlc)
+		errmsg<-jsonlite::toJSON(as.character(ymlc))
 		return(makeOutReport(result="Error",process="Read yaml",description=errmsg))
 	}
 	
@@ -244,7 +244,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 	atKobj<-rawToChar(get_object(bucket=inpBuck,object=paste0("FirstProcess/keys/",atKF)))
 	ymlatk<-try(yaml::yaml.load(atKobj),silent=TRUE)
 	if(inherits(ymlatk,"try-error")){
-		errmsg<-jsonlite::toJSON(ymlatk)
+		errmsg<-jsonlite::toJSON(as.character(ymlatk))
 		return(makeOutReport(result="Error",process="Read AT keys from yaml file",description=errmsg))
 	}
 	
@@ -261,7 +261,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 			close(zz)
 			svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-data"),silent=TRUE)
 		}
-		errmsg<-toJSON(tablesToProcess)
+		errmsg<-jsonlite::toJSON(as.character(tablesToProcess))
 		return(makeOutReport(result="Error",process="List tables to process",description=errmsg))
 	}
 	
@@ -338,7 +338,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 						close(zz)
 						svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-data"),silent=TRUE)
 					}
-					errmsg<-toJSON(svl)
+					errmsg<-jsonlite::toJSON(as.character(svl))
 					return(makeOutReport(result="Error",process="Save object locally",description=errmsg))
 				}
 				saveobject<-paste0(savePath,layerNm,".RData") 
@@ -354,7 +354,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 						close(zz)
 						svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-data"),silent=TRUE)
 					}
-					errmsg<-toJSON(svb)
+					errmsg<-jsonlite::toJSON(as.character(svb))
 					return(makeOutReport(result="Error",process="Save object in bucket",description=errmsg))
 				}
 				
@@ -407,8 +407,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 			}
 		}
 		updateResults<-rbind(updateResults,tdf)
-	}
-	updatedRes<-toJSON(updateResults)	
+	}	
 	
 	if(flog==0){
 		cat("Completed processing rasters.",sep ="\n",file = zz, append=TRUE)
@@ -420,7 +419,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 		close(zz)
 		svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-data"),silent=TRUE)
 	}
-	return(makeOutReport(result="Completed",process="Cropping and saving",description=updatedRes))
+	return(makeOutReport(result="Completed",process="Cropping and saving",description=updateResults))
 	
 }
 

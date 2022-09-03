@@ -423,5 +423,8 @@ batchImportRasters_toOSW<-function(inpJSON){
 	
 }
 
-
+# wrapper function with a common handler name makes the code more portable
+main<-function(inpJSON){
+    return(batchImportRasters_toOSW(inpJSON))
+}
 

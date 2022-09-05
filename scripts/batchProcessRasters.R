@@ -82,9 +82,6 @@ batchImportRasters_toOSW<-function(inpJSON){
 	}
 		
 	## Is the input a valid JSON string?
-	if(!is.character(inpJSON)){
-		return(makeOutReport(result="Error",process="Check input JSON",description="Input is not a character string"))
-	}
 	if(!jsonlite::validate(inpJSON)[[1]]){
 		return(makeOutReport(result="Error",process="Check input JSON",description="Invalid JSON"))
 	}
@@ -107,7 +104,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 	}
 	
 	#  Can we load it? Is the input a valid yaml document?
-	chryaml<-rawToChar(get_object(bucket="offshore-wind-data",object=inpYAML))
+	chryaml<-rawToChar(get_object(bucket="offshore-wind-test",object=inpYAML))
 	ymlc<-try(yaml::yaml.load(chryaml),silent=TRUE)
 	if(inherits(ymlc,"try-error")){
 		errmsg<-jsonlite::toJSON(as.character(ymlc))
@@ -185,8 +182,8 @@ batchImportRasters_toOSW<-function(inpJSON){
 	}
 	
 	# copy raster data locally from bucket
-	wgrd<-try(save_object(object="FirstProcess/AliquoteGrid/aliqgrid.grd",bucket="offshore-wind-data",file=paste0(localTempDir,"aliqgrid.grd")),silent=T)
-	wgri<-try(save_object(object="FirstProcess/AliquoteGrid/aliqgrid.gri",bucket="offshore-wind-data",file=paste0(localTempDir,"aliqgrid.gri")),silent=T)
+	wgrd<-try(save_object(object="FirstProcess/AliquoteGrid/aliqgrid.grd",bucket="offshore-wind-test",file=paste0(localTempDir,"aliqgrid.grd")),silent=T)
+	wgri<-try(save_object(object="FirstProcess/AliquoteGrid/aliqgrid.gri",bucket="offshore-wind-test",file=paste0(localTempDir,"aliqgrid.gri")),silent=T)
 	if(inherits(wgrd,"try-error") | inherits(wgri,"try-error")){
 		if(flog==0){
 			cat("Failed to copy base grid locally.",sep ="\n",file = zz, append=TRUE)
@@ -196,7 +193,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 			cat("\n","\n",file = zz, append=TRUE)
 			cat("Terminating batch raster processing.",sep ="\n",file = zz, append=TRUE)
 			close(zz)
-			svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-data"),silent=TRUE)
+			svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-test"),silent=TRUE)
 		}
 		return(makeOutReport(result="Error",process="Copy base grid",description="Failed to copy base grid into the local temp directory"))
 	}
@@ -211,7 +208,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 			cat("\n","\n",file = zz, append=TRUE)
 			cat("Terminating batch raster processing.",sep ="\n",file = zz, append=TRUE)
 			close(zz)
-			svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-data"),silent=TRUE)
+			svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-test"),silent=TRUE)
 		}
 		return(makeOutReport(result="Error",process="Copy base grid",description="Failed to copy base grid into the local temp directory"))
 	}
@@ -226,7 +223,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 			cat("\n","\n",file = zz, append=TRUE)
 			cat("Terminating batch raster processing.",sep ="\n",file = zz, append=TRUE)
 			close(zz)
-			svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-data"),silent=TRUE)
+			svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-test"),silent=TRUE)
 		}
 		return(makeOutReport(result="Error",process="Load base grid",description="Base grid exists and is acessible, but failed to load."))
 	}
@@ -259,7 +256,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 			cat("\n","\n",file = zz, append=TRUE)
 			cat("Terminating batch raster processing.",sep ="\n",file = zz, append=TRUE)
 			close(zz)
-			svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-data"),silent=TRUE)
+			svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-test"),silent=TRUE)
 		}
 		errmsg<-jsonlite::toJSON(as.character(tablesToProcess))
 		return(makeOutReport(result="Error",process="List tables to process",description=errmsg))
@@ -277,7 +274,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 			cat("\n","\n",file = zz, append=TRUE)
 			cat("Terminating batch raster processing.",sep ="\n",file = zz, append=TRUE)
 			close(zz)
-			svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-data"),silent=TRUE)
+			svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-test"),silent=TRUE)
 		}
 		return(makeOutReport(result="Error",process="List tables to process",description="List is of length 0, nothing to process."))
 	}
@@ -293,7 +290,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 		layerNm<-as.character(tablesToProcess[ii,"layerName"]) 
 		season<-as.character(tablesToProcess[ii,"Season"]) 
 		tmpRastNm=paste0(localTempDir,layerNm,"_inpRast.tif")
-		tmpInpRast<-try(save_object(object=inpRast,bucket="offshore-wind-data",file=tmpRastNm),silent=T)
+		tmpInpRast<-try(save_object(object=inpRast,bucket="offshore-wind-test",file=tmpRastNm),silent=T)
 		rastLayer<-try(raster(tmpInpRast),silent=TRUE)
 				
 		if(!inherits(rastLayer,"try-error")){
@@ -336,13 +333,13 @@ batchImportRasters_toOSW<-function(inpJSON){
 						cat("\n","\n",file = zz, append=TRUE)
 						cat("Terminating batch raster processing.",sep ="\n",file = zz, append=TRUE)
 						close(zz)
-						svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-data"),silent=TRUE)
+						svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-test"),silent=TRUE)
 					}
 					errmsg<-jsonlite::toJSON(as.character(svl))
 					return(makeOutReport(result="Error",process="Save object locally",description=errmsg))
 				}
 				saveobject<-paste0(savePath,layerNm,".RData") 
-				svb<-try(put_object(file=localfile,object=saveobject,bucket="offshore-wind-data"),silent=TRUE)
+				svb<-try(put_object(file=localfile,object=saveobject,bucket="offshore-wind-test"),silent=TRUE)
 				if(inherits(svb,"try-error")){
 					if(flog==0){
 						cat("Processed raster but failed to save data table in the bucket.",sep ="\n",file = zz, append=TRUE)
@@ -352,7 +349,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 						cat("\n","\n",file = zz, append=TRUE)
 						cat("Terminating batch raster processing.",sep ="\n",file = zz, append=TRUE)
 						close(zz)
-						svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-data"),silent=TRUE)
+						svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-test"),silent=TRUE)
 					}
 					errmsg<-jsonlite::toJSON(as.character(svb))
 					return(makeOutReport(result="Error",process="Save object in bucket",description=errmsg))
@@ -417,7 +414,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 		cat("\n","\n",file = zz, append=TRUE)
 		cat("Terminating batch raster processing.",sep ="\n",file = zz, append=TRUE)
 		close(zz)
-		svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-data"),silent=TRUE)
+		svlg<-try(put_object(file=logfile,object=savelog,bucket="offshore-wind-test"),silent=TRUE)
 	}
 	return(makeOutReport(result="Completed",process="Cropping and saving",description=updateResults))
 	

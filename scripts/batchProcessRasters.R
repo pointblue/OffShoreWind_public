@@ -279,6 +279,8 @@ batchImportRasters_toOSW<-function(inpJSON){
 		return(makeOutReport(result="Error",process="List tables to process",description="List is of length 0, nothing to process."))
 	}
 	
+	makeOutReport(result="Check",process="List of tables to process",description=tablesToProcess)
+	
 	## READY TO PROCESS
 	## reproject and update AT
 	updateResults<-data.frame()
@@ -292,6 +294,11 @@ batchImportRasters_toOSW<-function(inpJSON){
 		tmpRastNm=paste0(localTempDir,layerNm,"_inpRast.tif")
 		tmpInpRast<-try(save_object(object=inpRast,bucket=inpBuck,file=tmpRastNm),silent=T)
 		rastLayer<-try(raster(tmpInpRast),silent=TRUE)
+		
+		projcheck<-projection(rastLayer)
+		makeOutReport(result="Check",process="Verify input has projection",description=projcheck)
+		projcheck<-projection(rastLayer)
+		makeOutReport(result="Check",process="Verify grid has projection",description=projAliq)
 				
 		if(!inherits(rastLayer,"try-error")){
 			if(flog==0){

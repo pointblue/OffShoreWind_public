@@ -296,9 +296,12 @@ batchImportRasters_toOSW<-function(inpJSON){
 		rastLayer<-try(raster(tmpInpRast),silent=TRUE)
 		
 		projcheck<-projection(rastLayer)
-		makeOutReport(result="Check",process="Verify input has projection",description=projcheck)
+		projchkInp<-makeOutReport(result="Check",process="Verify input has projection",description=projcheck)
+		cat(projchkInp,sep ="\n",file = zz, append=TRUE)
 		projcheck<-projection(rastLayer)
-		makeOutReport(result="Check",process="Verify grid has projection",description=projAliq)
+		aligchkInp<-makeOutReport(result="Check",process="Verify grid has projection",description=projAliq)
+		cat(aligchkInp,sep ="\n",file = zz, append=TRUE)
+		cat(sitd,sep="\n",file=zz,append=TRUE)
 				
 		if(!inherits(rastLayer,"try-error")){
 			if(flog==0){

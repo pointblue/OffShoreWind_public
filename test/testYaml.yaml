@@ -6,4 +6,4 @@ baseGridPathName: FirstProcess/AliquoteGrid/aliqgrid.grd
 seasons: Summer
 saveDir: FirstProcess/ProcessedRasters/
 logDir: FirstProcess/logs/
-logSessionInfo: TRUE
+logSessionInfo: FALSE

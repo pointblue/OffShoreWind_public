@@ -182,9 +182,11 @@ batchImportRasters_toOSW<-function(inpJSON){
 	}
 	
 	# copy raster data locally from bucket
-	wgrd<-try(save_object(object="FirstProcess/AliquoteGrid/aliqgrid.grd",bucket=inpBuck,file=paste0(localTempDir,"aliqgrid.grd")),silent=T)
-	wgri<-try(save_object(object="FirstProcess/AliquoteGrid/aliqgrid.gri",bucket=inpBuck,file=paste0(localTempDir,"aliqgrid.gri")),silent=T)
-	if(inherits(wgrd,"try-error") | inherits(wgri,"try-error")){
+	#wgrd<-try(save_object(object="FirstProcess/AliquoteGrid/aliqgrid.grd",bucket=inpBuck,file=paste0(localTempDir,"aliqgrid.grd")),silent=T)
+	#wgri<-try(save_object(object="FirstProcess/AliquoteGrid/aliqgrid.gri",bucket=inpBuck,file=paste0(localTempDir,"aliqgrid.gri")),silent=T)
+	wgrd<-try(save_object(object="FirstProcess/AliquoteGrid/aliqgrid.tif",bucket=inpBuck,file=paste0(localTempDir,"aliqgrid.tif")),silent=T)
+	#if(inherits(wgrd,"try-error") | inherits(wgri,"try-error")){
+	if(inherits(wgrd,"try-error")){
 		if(flog==0){
 			cat("Failed to copy base grid locally.",sep ="\n",file = zz, append=TRUE)
 			if(logSessionInfo){
@@ -197,9 +199,11 @@ batchImportRasters_toOSW<-function(inpJSON){
 		}
 		return(makeOutReport(result="Error",process="Copy base grid",description="Failed to copy base grid into the local temp directory"))
 	}
-	fegrd<-file.exists(paste0(localTempDir,"aliqgrid.grd"))
-	fegri<-file.exists(paste0(localTempDir,"aliqgrid.grd"))
-	if(!fegrd | !fegri){
+	#fegrd<-file.exists(paste0(localTempDir,"aliqgrid.grd"))
+	#fegri<-file.exists(paste0(localTempDir,"aliqgrid.grd"))
+	fegrd<-file.exists(paste0(localTempDir,"aliqgrid.tif"))
+	#if(!fegrd | !fegri){
+	if(!fegrd){
 		if(flog==0){
 			cat("Failed to copy base grid locally.",sep ="\n",file = zz, append=TRUE)
 			if(logSessionInfo){
@@ -213,7 +217,8 @@ batchImportRasters_toOSW<-function(inpJSON){
 		return(makeOutReport(result="Error",process="Copy base grid",description="Failed to copy base grid into the local temp directory"))
 	}
 
-	aliqgrd<-try(raster(paste0(localTempDir,"aliqgrid.gri")),silent=T)
+	#aliqgrd<-try(raster(paste0(localTempDir,"aliqgrid.gri")),silent=T)
+	aliqgrd<-try(raster(paste0(localTempDir,"aliqgrid.tif")),silent=T)
 	if(inherits(aliqgrd,"try-error")){
 		if(flog==0){
 			cat("Failed to load the base grid into a raster.",sep ="\n",file = zz, append=TRUE)

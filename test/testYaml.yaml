@@ -2,7 +2,7 @@ ATkeyfile: ATkeys_OSW.yaml
 ATtable: MarineMammalsTurtles
 sciName: Chelonia mydas
 inputRaster: FirstProcess/InputRasters/demoraster.tif
-baseGridPathName: FirstProcess/AliquoteGrid/aliqgrid.grd
+baseGridPathName: FirstProcess/AliquoteGrid/aliqgrid.tif
 seasons: Summer
 saveDir: FirstProcess/ProcessedRasters/
 logDir: FirstProcess/logs/

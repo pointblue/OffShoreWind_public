@@ -298,8 +298,7 @@ batchImportRasters_toOSW<-function(inpJSON){
 		cat(projchkInp,sep ="\n",file = zz, append=TRUE)
 		aligchkInp<-makeOutReport(result="Check",process="Verify grid has projection",description=projAliq)
 		cat(aligchkInp,sep ="\n",file = zz, append=TRUE)
-		cat(sitd,sep="\n",file=zz,append=TRUE)
-				
+						
 		if(!inherits(rastLayer,"try-error")){
 			if(flog==0){
 				cat(paste("Processing layer:",layerNm),sep ="\n",file = zz, append=TRUE)

@@ -376,16 +376,16 @@ batchImportRasters_toOSW<-function(inpJSON){
 					              SummerLayerName=layerNm)
 				}else if(season=="Fall"){
 					newdata<-list(FallTableVer=dateVal,
-					              SummerPathToDataset=inpRast,
-					              SummerLayerName=layerNm)
+					              FallPathToDataset=inpRast,
+					              FallLayerName=layerNm)
 				}else if(season=="Winter"){
 					newdata<-list(WinterTableVer=dateVal,
-					              SummerPathToDataset=inpRast,
-					              SummerLayerName=layerNm)
+					              WinterPathToDataset=inpRast,
+					              WinterLayerName=layerNm)
 				}else{
 					newdata<-list(SpringTableVer=dateVal,
-					              SummerPathToDataset=inpRast,
-					              SummerLayerName=layerNm)
+					              SpringPathToDataset=inpRast,
+					              SpringLayerName=layerNm)
 				}
 				
 				#Update the AT to append the date

@@ -3,7 +3,6 @@
 library("paws")
 
 #-------------------------------------------------------------------------------
-
 # Create a Lambda function package to upload.  ##### THIS SHOULD BE THE FILE CONTAINING THE LAMBDA SCRIPT, NOT INLINE CODE
 
 code <- 'exports.handler = async (event, context) => { return "Hello!"; };'
@@ -16,7 +15,6 @@ utils::zip(zip_file, js_file, flags = "-j")
 zip_contents <- readBin(zip_file, "raw", n = 1e5)
 
 #-------------------------------------------------------------------------------
-
 # Set up an IAM role for the Lambda function.
 
 role_name <- "MyRole"  # GIVE THIS A BETTER NAME

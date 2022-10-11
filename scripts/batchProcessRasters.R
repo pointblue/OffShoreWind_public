@@ -65,7 +65,7 @@ getTablesToProcess<-function(atSourceTable,seasons){
 batchImportRasters_toOSW<-function(inpJSON){
 	
 	#start log timing here...
-	logstart<-format(Sys.time(), "%Y%m%d %H%M%S")
+	logstart<-format(Sys.time(), "%Y%m%d %H%M%OS2")
 	
 	## supress warnings
 	options(warn=-1)
@@ -161,7 +161,9 @@ batchImportRasters_toOSW<-function(inpJSON){
 	}
 	
 	#create log file for this run:
-	filelogn<-paste0("OSW_CA_batchRasterProcessing_",logstart)
+	filelogn<-paste0("OSW_CA_batchRasterProcessing_",
+	                 gsub(" ", "_", sciName), "_",
+	                 paste0(substr(seasons, 1, 2), collapse=""), "_", logstart)
 	logfile<-paste(localTempDir,filelogn,".log",sep="")
 	savelog<-paste0(logDir,filelogn,".log")
 	sitd<-as.character(sessionInfo())

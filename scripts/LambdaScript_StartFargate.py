@@ -54,8 +54,4 @@ def lambda_handler(event,context):
     )
     return str(response)
   
-# Required env vars:
-# $CLUSTER: name of the ECS cluster
-# $TASK_DEFINITION: name and revision of the task definition (i.e. `mytask:1`)
-# $SUBNETS: comma-separated list of subnets to place the new task
-# $SECURITY_GROUPS: comma-separated list of security groups to be used for the new task
+

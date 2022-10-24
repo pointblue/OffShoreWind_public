@@ -55,19 +55,19 @@ lambda$create_function(
   FunctionName = "MyFunction",
   Handler = "lambda.handler",
   Role = role$Role$Arn,
-  Runtime = "nodejs8.10"
+  Runtime = "nodejs16.x"
 )
 
 ##################################### THIS IS ONLY IF WE WANT TO RUN THE LAMBDA PROGRAMMATICALLY INSTEAD OF VIA S3 OR OTHER TRIGGER
 
-# # Run the function.
-# resp <- lambda$invoke("MyFunction")
-# 
-# # Print the function's output.
-# rawToChar(resp$Payload)
-# 
-# # List available functions.
-# lambda$list_functions()
+# Run the function.
+resp <- lambda$invoke("MyFunction")
+
+# Print the function's output.
+rawToChar(resp$Payload)
+
+# List available functions.
+lambda$list_functions()
 
 # Clean up.
 lambda$delete_function("MyFunction")

@@ -40,11 +40,11 @@ ecs_svc$run_task(cluster = "test-greet-cluster", # name or ARN of cluster
                                              awsvpcConfiguration = list(
                                                subnets = list(
                                                  "subnet-0e86140db2cd142ae"
-                                               )
+                                               ),
                                                # securityGroups = list(
                                                #   "string"
                                                # ),
-                                               # assignPublicIp = "DISABLED"
+                                               assignPublicIp = "ENABLED" #"DISABLED"
                                              )
                  )
                  # overrides = list(
@@ -119,3 +119,12 @@ ecs_svc$run_task(cluster = "test-greet-cluster", # name or ARN of cluster
                  # referenceId = "string", # the reference ID to use for the task
                  # startedBy = "string", # An optional tag specified at task start. E.g., a unique identifier for an automatically triggered task to run a batch process
                  )
+
+#---------------------------------------------
+# Clean up - things we may wish to clean up
+
+# Deregister task
+ecs_svc$deregister_task_definition(taskDefinition = "string")
+
+# Delete cluster
+ecs_svc$delete_cluster(cluster = "string")

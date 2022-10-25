@@ -55,6 +55,30 @@ ecs_svc <- ecs()
 ecs_svc$create_cluster(clusterName, tags, settings, capacityProviders,
 defaultCapacityProviderStrategy)
 
+#--------------------------------------------------------------------------
+# Register a task definition
+ecs_svc$register_task_definition(
+  family = "sleep360",
+  taskRoleArn = "",
+  neworkMode = "awsvpc",
+  containerDefinitions = list(
+    list(
+      name = "sleep",
+      command = list(
+        "sleep",
+        "360"
+      ),
+      cpu = 10L,
+      essential = TRUE,
+      image = "busybox",
+      memory = 10L
+    )
+  ),
+  volumes = list(),
+  cpu = 256,
+  memory = 512
+)
+
   
 #==========================================================================
 # Fargate EBS creation and data transfer (May go in the Fargate Container code?)

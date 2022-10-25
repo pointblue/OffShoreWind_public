@@ -11,47 +11,47 @@ import os
 def lambda_handler(event,context):
     client = boto3.client('ecs')
     response = client.run_task(
-        cluster='CLUSTER',
-        launchType=['LAUNCH_TYPE', 'FARGATE'],
-        taskDefinition='TASK_DEFINITION',
+        cluster='test-greet-cluster',
+        launchType='FARGATE',
+        taskDefinition='test-greet-cluster',
         count= 1,
         platformVersion='LATEST',
         networkConfiguration={
             'awsvpcConfiguration': {
-                'subnets': ['SUBNET1', 'SUBNET2'],
-                'securityGroups': ['SECURITY_GROUP1', 'SECURITY_GROUP2'],
+                'subnets': ['subnet-0e86140db2cd142ae'],
+                'assignPublicIp': ['ENABLED']
             },
         },
-        overrides={
-        'containerOverrides': [
-            {
-                'name': 'string',
-                'command': [
-                    'string',
-                ],
-                'environment': [
-                    {
-                        'name': 'string',
-                        'value': 'string'
-                    },
-                ],
-                'environmentFiles': [
-                    {
-                        'value': 'string',
-                        'type': 's3'
-                    },
-                ],
-            },
-        ],
-        'cpu': 'string',
-        'executionRoleArn': 'string',
-        'memory': 'string',
-        'taskRoleArn': 'string',
-        'ephemeralStorage': {
-            'sizeInGiB': 123
-        }
-    }
     )
     return str(response)
   
-
+####
+# overrides={
+#         'containerOverrides': [
+#             {
+#                 'name': 'string',
+#                 'command': [
+#                     'string',
+#                 ],
+#                 'environment': [
+#                     {
+#                         'name': 'string',
+#                         'value': 'string'
+#                     },
+#                 ],
+#                 'environmentFiles': [
+#                     {
+#                         'value': 'string',
+#                         'type': 's3'
+#                     },
+#                 ],
+#             },
+#         ],
+#         'cpu': 'string',
+#         'executionRoleArn': 'string',
+#         'memory': 'string',
+#         'taskRoleArn': 'string',
+#         'ephemeralStorage': {
+#             'sizeInGiB': 123
+#         }
+#     }

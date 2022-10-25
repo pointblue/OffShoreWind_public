@@ -52,4 +52,17 @@ ecs_svc <- ecs()
 
 #--------------------------------------------------------------------------
 # Create compute cluster
-ecs_svc$
+ecs_svc$create_cluster(clusterName, tags, settings, capacityProviders,
+defaultCapacityProviderStrategy)
+
+  
+#==========================================================================
+# Fargate EBS creation and data transfer (May go in the Fargate Container code?)
+#==========================================================================
+
+#ec2_svc <- ec2()
+
+#ec2_svc$create_volume(AvailabilityZone, Encrypted, Iops, KmsKeyId,
+# OutpostArn, Size, SnapshotId, VolumeType, DryRun, TagSpecifications,
+# MultiAttachEnabled, Throughput)
+

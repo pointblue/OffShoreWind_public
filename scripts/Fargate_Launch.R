@@ -24,17 +24,6 @@ ecs_svc <- ecs(config = list(
 )
 
 #--------------------------------------------------------------------------
-## Current ERROR: ResourceInitializationError: unable to pull secrets or registry auth:
-## execution resource retrieval failed: unable to retrieve ecr registry auth: service
-## call has been retried 3 time(s): RequestError: send request failed caused by:
-## Post "https://api.ecr.us-east-1.amazonaws.com/": dial tcp 52.46.130.126:443: i/o timeout
-
-## Additional information:
-## - Amazon ECS tasks hosted on Fargate don't require the Amazon ECS interface VPC endpoints.
-## - Amazon ECS tasks hosted on Fargate using Linux platform version 1.4.0 or later require both the
-## com.amazonaws.region.ecr.dkr and com.amazonaws.region.ecr.api Amazon ECR VPC endpoints as well
-## as the Amazon S3 gateway endpoint to take advantage of this feature.
-
 # start the Fargate task
 ecs_svc$run_task(cluster = "test-greet-cluster", # name or ARN of cluster
                  count = 1, # number the specified task to instantiate on your cluster (<= 10)
@@ -46,10 +35,7 @@ ecs_svc$run_task(cluster = "test-greet-cluster", # name or ARN of cluster
                      subnets = list(
                        "subnet-0e86140db2cd142ae"
                      ),
-                     # securityGroups = list(
-                     #   "string"
-                     # ),
-                     assignPublicIp = "ENABLED" #"DISABLED"
+                     assignPublicIp = "ENABLED"
                    )),
                    
                    overrides = list(
@@ -121,11 +107,11 @@ ecs_svc$run_task(cluster = "test-greet-cluster", # name or ARN of cluster
                  # startedBy = "string", # An optional tag specified at task start. E.g., a unique identifier for an automatically triggered task to run a batch process
                  
 
-#---------------------------------------------
-# Clean up - things we may wish to clean up
-
-# Deregister task
-ecs_svc$deregister_task_definition(taskDefinition = "string")
-
-# Delete cluster
-ecs_svc$delete_cluster(cluster = "string")
+# #---------------------------------------------
+# # Clean up - things we may wish to clean up
+# 
+# # Deregister task
+# ecs_svc$deregister_task_definition(taskDefinition = "string")
+# 
+# # Delete cluster
+# ecs_svc$delete_cluster(cluster = "string")

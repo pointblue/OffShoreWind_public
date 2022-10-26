@@ -5,26 +5,7 @@ library("paws")
 #-------------------------------------------------------------------------------
 # Create a Lambda function package to upload.  ##### THIS SHOULD BE THE FILE CONTAINING THE LAMBDA SCRIPT, NOT INLINE CODE
 
-code <- "import boto3
-import os
-
-def lambda_handler(event,context):
-    client = boto3.client('ecs')
-    response = client.run_task(
-        cluster='r-fargito-skelito-cluster',
-        launchType='FARGATE',
-        taskDefinition='r-fargito-skelito-td',
-        count= 1,
-        platformVersion='LATEST',
-        networkConfiguration={
-            'awsvpcConfiguration': {
-                'subnets': ['subnet-0386fb9f7e0eaabc5'],
-                'assignPublicIp': 'ENABLED'
-            },
-        },
-
-    )
-    return str(response)"
+code <- readLines("C:/Users/crockwood/OffshoreWind_Project/OffShoreWind_public/scripts/LambdaScript_StartFargate.py")
 
 path <- tempdir()
 py_file <- file.path(path, "lambda.py")
@@ -74,6 +55,8 @@ lambda <- paws::lambda(config = list(
   region = "us-east-1" # need to specify region as different from profile default
   )
 )
+
+################### Need to insert a check here that role is created before continuing ####################
 
 # Create the Lambda function.
 lambda$create_function(

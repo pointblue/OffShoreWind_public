@@ -4,35 +4,24 @@
 ## function to start the Fargate task.
 
 
-
 import boto3
 import os
 
 def lambda_handler(event,context):
     client = boto3.client('ecs')
     response = client.run_task(
-        cluster='test-greet-cluster',
+        cluster='r-fargito-skelito-cluster',
         launchType='FARGATE',
-        taskDefinition='test-greet-cluster',
+        taskDefinition='r-fargito-skelito-td',
         count= 1,
         platformVersion='LATEST',
         networkConfiguration={
             'awsvpcConfiguration': {
-                'subnets': ['subnet-0e86140db2cd142ae'],
+                'subnets': ['subnet-0386fb9f7e0eaabc5'],
                 'assignPublicIp': 'ENABLED'
             },
         },
-        overrides={
-        'containerOverrides': [
-            {
-                'name': 'test-greet',
-                'environment': [
-                    {
-                        'name': 'HI_TO',
-                        'value': 'Cotton'
-                    },],
-             },],
-        },
+
     )
     return str(response)
   

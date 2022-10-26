@@ -11,28 +11,18 @@ import os
 def lambda_handler(event,context):
     client = boto3.client('ecs')
     response = client.run_task(
-        cluster='test-greet-cluster',
+        cluster='r-fargito-skelito-cluster',
         launchType='FARGATE',
-        taskDefinition='test-greet-cluster',
+        taskDefinition='r-fargito-skelito-td',
         count= 1,
         platformVersion='LATEST',
         networkConfiguration={
             'awsvpcConfiguration': {
-                'subnets': ['subnet-0e86140db2cd142ae'],
-                'assignPublicIp': ['ENABLED']
+                'subnets': ['subnet-0386fb9f7e0eaabc5'],
+                'assignPublicIp': 'ENABLED'
             },
         },
-        overrides={
-        'containerOverrides': [
-            {
-                'name': 'test-greet',
-                'environment': [
-                    {
-                        'name': 'HI_TO',
-                        'value': 'Cotton'
-                    },],
-             },],
-        },
+
     )
     return str(response)"
 
@@ -47,8 +37,8 @@ zip_contents <- readBin(zip_file, "raw", n = 1e5)
 #-------------------------------------------------------------------------------
 # Set up an IAM role for the Lambda function.
 
-role_name <- "Lambda_test-greet_role"  # GIVE THIS A BETTER NAME
-policy_arn <- "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"  # SHOULD WE USE THIS PROVIDED ROLE OR IS THERE A DIFFERENT ONE WE NEED?
+role_name <- "Lambda_fargate_skel_role"  # GIVE THIS A BETTER NAME
+policy_arn <- "arn:aws:iam::021949590247:policy/ECSAllowRunTask"  
 
 trust_policy <- list(
   Version = "2012-10-17",
@@ -64,7 +54,7 @@ trust_policy <- list(
 )
 
 iam <- paws::iam(config = list(
-  region = "us-east-2" # need to specify region as different from profile default
+  region = "us-east-1" # need to specify region as different from profile default
   )
 )
 
@@ -81,14 +71,14 @@ iam$attach_role_policy(
 #-------------------------------------------------------------------------------
 
 lambda <- paws::lambda(config = list(
-  region = "us-east-2" # need to specify region as different from profile default
+  region = "us-east-1" # need to specify region as different from profile default
   )
 )
 
 # Create the Lambda function.
 lambda$create_function(
   Code = list(ZipFile = zip_contents),
-  FunctionName = "Test-greet-lambdafunc",
+  FunctionName = "Fargate-skel-lambdafunc",
   Handler = "lambda.lambda_handler", # this refers to the file where the handler is stored (lambda.py) and the function name (lambda_handler) formatted as `file.function`
   Role = role$Role$Arn,
   Runtime = "python3.9" # latest python Lambda runtime
@@ -97,7 +87,7 @@ lambda$create_function(
 ##################################### THIS IS ONLY IF WE WANT TO RUN THE LAMBDA PROGRAMMATICALLY INSTEAD OF VIA S3 OR OTHER TRIGGER
 
 # Run the function.
-resp <- lambda$invoke("Test-greet-lambdafunc")
+resp <- lambda$invoke("Fargate-skel-lambdafunc")
 
 # Print the function's output.
 rawToChar(resp$Payload)
@@ -106,6 +96,6 @@ rawToChar(resp$Payload)
 lambda$list_functions()
 
 # Clean up.
-lambda$delete_function("Test-greet-lambdafunc")
+lambda$delete_function("Fargate-skel-lambdafunc")
 iam$detach_role_policy(role_name, policy_arn)
 iam$delete_role(role_name)

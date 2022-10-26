@@ -19,7 +19,7 @@ def lambda_handler(event,context):
         networkConfiguration={
             'awsvpcConfiguration': {
                 'subnets': ['subnet-0e86140db2cd142ae'],
-                'assignPublicIp': ['ENABLED']
+                'assignPublicIp': 'ENABLED'
             },
         },
         overrides={

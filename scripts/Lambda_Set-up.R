@@ -7,17 +7,17 @@ library("paws")
 
 code <- 'exports.handler = async (event, context) => { return "Hello!"; };'
 path <- tempdir()
-js_file <- file.path(path, "lambda.js")
-writeLines(code, js_file)
+py_file <- file.path(path, "lambda.py")
+writeLines(code, py_file)
 
 zip_file <- file.path(path, "lambda.zip")
-utils::zip(zip_file, js_file, flags = "-j")
+utils::zip(zip_file, py_file, flags = "-j") # flag -j stores just the file names not the path or directory names
 zip_contents <- readBin(zip_file, "raw", n = 1e5)
 
 #-------------------------------------------------------------------------------
 # Set up an IAM role for the Lambda function.
 
-role_name <- "MyRole"  # GIVE THIS A BETTER NAME
+role_name <- "Lambda_test-greet_role"  # GIVE THIS A BETTER NAME
 policy_arn <- "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"  # SHOULD WE USE THIS PROVIDED ROLE OR IS THERE A DIFFERENT ONE WE NEED?
 
 trust_policy <- list(
@@ -33,7 +33,10 @@ trust_policy <- list(
   )
 )
 
-iam <- paws::iam()
+iam <- paws::iam(config = list(
+  region = "us-east-2" # need to specify region as different from profile default
+  )
+)
 
 role <- iam$create_role(
   RoleName = role_name,
@@ -47,21 +50,24 @@ iam$attach_role_policy(
 
 #-------------------------------------------------------------------------------
 
-lambda <- paws::lambda()
+lambda <- paws::lambda(config = list(
+  region = "us-east-2" # need to specify region as different from profile default
+  )
+)
 
 # Create the Lambda function.
 lambda$create_function(
   Code = list(ZipFile = zip_contents),
-  FunctionName = "MyFunction",
-  Handler = "lambda.handler",
+  FunctionName = "Test-greet-lambdafunc",
+  Handler = "lambda.lambda_handler", # this refers to the file where the handler is stored (lambda.py) and the function name (lambda_handler) formatted as `file.function`
   Role = role$Role$Arn,
-  Runtime = "nodejs16.x"
+  Runtime = "python3.9" # latest python Lambda runtime
 )
 
 ##################################### THIS IS ONLY IF WE WANT TO RUN THE LAMBDA PROGRAMMATICALLY INSTEAD OF VIA S3 OR OTHER TRIGGER
 
 # Run the function.
-resp <- lambda$invoke("MyFunction")
+resp <- lambda$invoke("Test-greet-lambdafunc")
 
 # Print the function's output.
 rawToChar(resp$Payload)
@@ -70,6 +76,6 @@ rawToChar(resp$Payload)
 lambda$list_functions()
 
 # Clean up.
-lambda$delete_function("MyFunction")
+lambda$delete_function("Test-greet-lambdafunc")
 iam$detach_role_policy(role_name, policy_arn)
 iam$delete_role(role_name)

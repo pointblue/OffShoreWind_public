@@ -5,7 +5,37 @@ library("paws")
 #-------------------------------------------------------------------------------
 # Create a Lambda function package to upload.  ##### THIS SHOULD BE THE FILE CONTAINING THE LAMBDA SCRIPT, NOT INLINE CODE
 
-code <- 'exports.handler = async (event, context) => { return "Hello!"; };'
+code <- "import boto3
+import os
+
+def lambda_handler(event,context):
+    client = boto3.client('ecs')
+    response = client.run_task(
+        cluster='test-greet-cluster',
+        launchType='FARGATE',
+        taskDefinition='test-greet-cluster',
+        count= 1,
+        platformVersion='LATEST',
+        networkConfiguration={
+            'awsvpcConfiguration': {
+                'subnets': ['subnet-0e86140db2cd142ae'],
+                'assignPublicIp': ['ENABLED']
+            },
+        },
+        overrides={
+        'containerOverrides': [
+            {
+                'name': 'test-greet',
+                'environment': [
+                    {
+                        'name': 'HI_TO',
+                        'value': 'Cotton'
+                    },],
+             },],
+        },
+    )
+    return str(response)"
+
 path <- tempdir()
 py_file <- file.path(path, "lambda.py")
 writeLines(code, py_file)

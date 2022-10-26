@@ -22,6 +22,17 @@ def lambda_handler(event,context):
                 'assignPublicIp': ['ENABLED']
             },
         },
+        overrides={
+        'containerOverrides': [
+            {
+                'name': 'test-greet',
+                'environment': [
+                    {
+                        'name': 'HI_TO',
+                        'value': 'Cotton'
+                    },],
+             },],
+        },
     )
     return str(response)
   

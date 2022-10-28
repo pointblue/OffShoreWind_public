@@ -1,0 +1,84 @@
+# Code to set up and initiate a Lambda Function
+
+library("paws")
+
+#-------------------------------------------------------------------------------
+# Create a Lambda function package to upload.  ##### THIS SHOULD BE THE FILE CONTAINING THE LAMBDA SCRIPT, NOT INLINE CODE
+
+code <- readLines("C:/Users/crockwood/OffshoreWind_Project/OffShoreWind_public/scripts/LambdaScript_StartFargate_s3test.py")
+
+path <- tempdir()
+py_file <- file.path(path, "lambda.py")
+writeLines(code, py_file)
+
+zip_file <- file.path(path, "lambda.zip")
+utils::zip(zip_file, py_file, flags = "-j") # flag -j stores just the file names not the path or directory names
+zip_contents <- readBin(zip_file, "raw", n = 1e5)
+
+#-------------------------------------------------------------------------------
+# Set up an IAM role for the Lambda function.
+
+role_name <- "Lambda_fargate_skel_role"  
+policy_arn <- "arn:aws:iam::021949590247:policy/ECSAllowRunTask"  
+
+trust_policy <- list(
+  Version = "2012-10-17",
+  Statement = list(
+    list(
+      Effect = "Allow",
+      Principal = list(
+        Service = "lambda.amazonaws.com"
+      ),
+      Action = "sts:AssumeRole"  
+    )
+  )
+)
+
+iam <- paws::iam(config = list(
+  region = "us-east-1" # need to specify region as different from profile default
+  )
+)
+
+role <- iam$create_role(
+  RoleName = role_name,
+  AssumeRolePolicyDocument = jsonlite::toJSON(trust_policy, auto_unbox = TRUE)
+)
+
+iam$attach_role_policy(
+  RoleName = role_name,
+  PolicyArn = policy_arn
+)
+
+#-------------------------------------------------------------------------------
+
+lambda <- paws::lambda(config = list(
+  region = "us-east-1" # need to specify region as different from profile default
+  )
+)
+
+################### Need to insert a check here that role is created before continuing ####################
+
+# Create the Lambda function.
+lambda$create_function(
+  Code = list(ZipFile = zip_contents),
+  FunctionName = "Fargate-skel-lambdafunc",
+  Handler = "lambda.lambda_handler", # this refers to the file where the handler is stored (lambda.py) and the function name (lambda_handler) formatted as `file.function`
+  Role = role$Role$Arn,
+  Runtime = "python3.9" # latest python Lambda runtime
+)
+
+##################################### THIS IS ONLY IF WE WANT TO RUN THE LAMBDA PROGRAMMATICALLY INSTEAD OF VIA S3 OR OTHER TRIGGER
+
+# Run the function.
+resp <- lambda$invoke("Fargate-skel-lambdafunc")
+
+# Print the function's output.
+rawToChar(resp$Payload)
+
+# List available functions.
+lambda$list_functions()
+
+# Clean up.
+lambda$delete_function("Fargate-skel-lambdafunc")
+iam$detach_role_policy(role_name, policy_arn)
+iam$delete_role(role_name)
